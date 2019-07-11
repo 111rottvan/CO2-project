@@ -1,0 +1,203 @@
+// Creating map object
+
+var myMap = L.map("map", {
+  center: [0, 0],
+  zoom: 1.5
+  
+});
+
+// Adding tile layer
+L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+  attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+  maxZoom: 18,
+  id: "mapbox.streets",
+  accessToken: API_KEY
+}).addTo(myMap);
+
+// Link to GeoJSON
+var APILink = "http://data.beta.nyc//dataset/d6ffa9a4-c598-4b18-8caf-14abde6a5755/resource/74cdcc33-512f-439c-" +
+"a43e-c09588c4b391/download/60dbe69bcd3640d5bedde86d69ba7666geojsonmedianhouseholdincomecensustract.geojson";
+
+var geojson;
+var url = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
+
+
+d3.json(url , function(data){
+  var polygon_data= {} ;
+   polygon_data.type = data.type;
+   polygon_data.features = [];
+var co2_data ;
+d3.csv("static/js/co2.csv", function(csv_data){
+ co2_data= csv_data.map(function(x){
+if ( x["2014"].length > 0){
+  return x;
+}
+});
+
+var geo_row ;
+var final_data = [];
+for ( x=0 ; x< co2_data.length ; x++ ){
+  //polygon_data.filter(  )
+geo_row={};
+
+if (
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0]){
+let n = +co2_data[x]["2014"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_2014 = n.toFixed(2);
+n=0;
+n = +co2_data[x]["2013"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_2013 = n.toFixed(2);
+n=0;
+n = +co2_data[x]["2012"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_2012 = n.toFixed(2);
+n=0;
+n = +co2_data[x]["2011"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_2011 = n.toFixed(2);
+n=0;
+n = +co2_data[x]["2010"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_2010 = n.toFixed(2);
+n=0;
+n = +co2_data[x]["2009"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_2009 = n.toFixed(2);
+n=0;
+n = +co2_data[x]["2000"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_2000 = n.toFixed(2);
+n=0;
+n = +co2_data[x]["1990"];
+data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0].properties.co2_1990 = n.toFixed(2);
+polygon_data.features.push(data.features.filter(a=>a.properties.ISO_A3 === co2_data[x]["Country Code"] )[0]);
+
+}
+}
+
+
+function getColor(d) {
+  console.log(d);
+  return d > 40 ? '#FF0000' :
+         d > 30 ? '#FF1100' :
+         d > 20 ? '#FF4600' :
+         d > 10 ? '#FF9E00' :
+         d > 5 ? '#FFAF00' :
+         d > 2 ? '#FFC100' :
+         d > 0 ? '#E5FF00' :
+                 '#D4FF00';
+};
+
+
+
+console.log(polygon_data);
+L.geoJson(polygon_data,)
+
+}
+
+// Grab data with d3
+
+/*
+  geojson = L.choropleth(polygon_data, {
+   
+    // Define what  property in the features to use
+    valueProperty: "co2_value",
+    // Set color scale
+    scale: ["#ffffb2", "#b10026"],
+    // Number of breaks in step range
+    steps: 10,
+    // q for quartile, e for equidistant, k for k-means
+    mode: "q",
+    // Binding a pop-up to each layer
+    onEachFeature: function(feature, layer) {
+      layer.bindPopup(feature.properties.ADMIN + ", " + feature.properties.ISO_A3 + "<br>Co2 Levels:<br>" +
+         feature.properties.co2_vlaue);
+    }
+  }).addTo(myMap);
+*/
+
+  function style(feature) {
+    console.log(feature.properties.co2_2013," 2014 -->" + feature.properties.co2_2014, + feature.properties.co2_2013, + feature.properties.co2_2012, + feature.properties.co2_2011, + feature.properties.co2_2010, + feature.properties.co2_2009, + feature.properties.co2_2000, + feature.properties.co2_1990,feature.properties.ADMIN );
+    return {
+        fillColor: getColor(feature.properties.co2_2014),
+        weight: 2,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7
+    };
+}
+
+L.geoJson(polygon_data, {
+  style: style,
+  onEachFeature: function(feature, layer) {
+    layer.bindPopup(feature.properties.ADMIN + ", " + feature.properties.ISO_A3 + "<br>Co2 Levels Per Capita:<br> (metric tons) 2013 & 2014 <br>" +
+       feature.properties.co2_2013 + "&" +  feature.properties.co2_2014 );
+  }
+
+}).addTo(myMap);
+
+
+/*
+  // Set up the legend
+  var legend = L.control({ position: "bottomright" });
+  legend.onAdd = function() {
+    var div = L.DomUtil.create("div", "info legend");
+    var limits = [1,2,3,4,5,6,7,8,9,10] ; // geojson.options.limits;
+    var colors = geojson.options.colors;
+    var labels = [];
+   console.log(limits);
+   console.log(colors);
+    // Add min & max
+    var legendInfo = "<h1>Co2 Levels</h1>" +
+      "<div class=\"labels\">" +
+        "<div class=\"min\">" + limits[0] + "</div>" +
+        "<div class=\"max\">" + limits[limits.length - 1] + "</div>" +
+      "</div>";
+    div.innerHTML = legendInfo;
+    limits.forEach(function(limit, index) {
+      labels.push("<li style=\"background-color: " + colors[index] + "\"></li>");
+    });
+    div.innerHTML += "<ul>" + labels.join("") + "</ul>";
+    return div;
+  };
+  // Adding legend to the map
+  legend.addTo(myMap);
+*/
+
+// var baseLayers = {
+//   "1990": feature.properties.co2_1990,
+//   "2000": feature.properties.co2_2000,
+//   "2009": feature.properties.co2_2009,
+//   "2010": feature.properties.co2_2010,
+//   "2011": feature.properties.co2_2011,
+//   "2012": feature.properties.co2_2012,
+//   "2013": feature.properties.co2_2013,
+//   "2014": feature.properties.co2_2014,
+// };
+// var myMap = L.map("map", {
+//   center: [0, 0],
+//   zoom: 1.5
+//   layers: [feature.properties.co2_1990, feature.properties.co2_2000, feature.properties.co2_2009, feature.properties.co2_2010, feature.properties.co2_2011, feature.properties.co2_2012,feature.properties.co2_2013,feature.properties.co2_2014] 
+// });
+// L.control.layers(baseLayers).addTo(myMap);
+
+var legend = L.control({position: "bottomright"});
+
+legend.onAdd = function (map) {
+
+    var div = L.DomUtil.create('div', 'info legend'),
+        grades = [0, 2, 4, 5, 6, 7, 8],
+        labels = [];
+
+    // loop through our density intervals and generate a label with a colored square for each interval
+    for (var i = 0; i < grades.length; i++) {
+        div.innerHTML +=
+            '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+    }
+
+    return div;
+};
+
+legend.addTo(myMap);
+});
+
+
+});
+
